@@ -1,16 +1,9 @@
 // Hospital Management System - Main App
-   // Created: [15-02-2026]
- <script type="text/babel">
+// Created: [15-02-2026]
 
+// Render the app
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
 
-    
-
-    // ===========================================
-    // MAIN APP COMPONENT
-    // This is the brain of our application!
-    // ===========================================
-   
-
-    // Initialize Lucide icons
-    lucide.createIcons();
-  </script>
+// Initialize Lucide icons
+lucide.createIcons();
