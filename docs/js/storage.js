@@ -54,4 +54,4 @@
         }
       }
     };
-windows.storage=storage;
+window.storage=storage;
