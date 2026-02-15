@@ -1,4 +1,5 @@
- function App() {
+ const { useState, useEffect } = React;
+function App() {
       // STATE MANAGEMENT - Think of these as variables that React watches
       // When they change, the UI updates automatically!
       const [currentUser, setCurrentUser] = useState(null); // Who's logged in?
