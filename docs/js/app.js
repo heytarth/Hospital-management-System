@@ -1,2 +1,760 @@
 // Hospital Management System - Main App
    // Created: [15-02-2026]
+ <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // ===========================================
+    // STORAGE HELPER FUNCTIONS
+    // These replace window.storage with localStorage
+    // localStorage is available in ALL browsers!
+    // ===========================================
+    const storage = {
+      // GET data from localStorage
+      get: (key) => {
+        try {
+          const value = localStorage.getItem(key);
+          return value ? { value } : null;
+        } catch (error) {
+          console.error('Storage get error:', error);
+          return null;
+        }
+      },
+      
+      // SET data in localStorage
+      set: (key, value) => {
+        try {
+          localStorage.setItem(key, value);
+          return { value };
+        } catch (error) {
+          console.error('Storage set error:', error);
+          return null;
+        }
+      },
+      
+      // DELETE data from localStorage
+      delete: (key) => {
+        try {
+          localStorage.removeItem(key);
+          return { deleted: true };
+        } catch (error) {
+          console.error('Storage delete error:', error);
+          return null;
+        }
+      },
+      
+      // LIST all keys with a prefix
+      list: (prefix) => {
+        try {
+          const keys = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith(prefix)) {
+              keys.push(key);
+            }
+          }
+          return { keys };
+        } catch (error) {
+          console.error('Storage list error:', error);
+          return { keys: [] };
+        }
+      }
+    };
+
+    // ===========================================
+    // MAIN APP COMPONENT
+    // This is the brain of our application!
+    // ===========================================
+    function App() {
+      // STATE MANAGEMENT - Think of these as variables that React watches
+      // When they change, the UI updates automatically!
+      const [currentUser, setCurrentUser] = useState(null); // Who's logged in?
+      const [currentPage, setCurrentPage] = useState('login'); // Which page to show?
+      const [loading, setLoading] = useState(true); // Is data loading?
+
+      // CHECK IF USER IS ALREADY LOGGED IN (when app loads)
+      useEffect(() => {
+        checkExistingLogin();
+      }, []);
+
+      // This function checks storage to see if someone is already logged in
+      function checkExistingLogin() {
+        try {
+          const result = storage.get('current_user');
+          if (result && result.value) {
+            const user = JSON.parse(result.value);
+            setCurrentUser(user);
+            setCurrentPage(user.role === 'admin' ? 'admin' : 'dashboard');
+          }
+        } catch (error) {
+          console.log('No existing login found');
+        }
+        setLoading(false);
+      }
+
+      // LOGOUT FUNCTION - Clears the current user
+      function handleLogout() {
+        storage.delete('current_user');
+        setCurrentUser(null);
+        setCurrentPage('login');
+      }
+
+      // Show loading screen while checking login
+      if (loading) {
+        return (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-xl text-gray-600">Loading...</div>
+          </div>
+        );
+      }
+
+      // RENDER THE CORRECT PAGE based on currentPage state
+      return (
+        <div className="min-h-screen">
+          {currentPage === 'login' && (
+            <LoginPage 
+              onLogin={(user) => {
+                setCurrentUser(user);
+                setCurrentPage(user.role === 'admin' ? 'admin' : 'dashboard');
+              }}
+              onSwitchToSignup={() => setCurrentPage('signup')}
+            />
+          )}
+          
+          {currentPage === 'signup' && (
+            <SignupPage 
+              onSignup={(user) => {
+                setCurrentUser(user);
+                setCurrentPage('dashboard');
+              }}
+              onSwitchToLogin={() => setCurrentPage('login')}
+            />
+          )}
+          
+          {currentPage === 'dashboard' && (
+            <DoctorDashboard 
+              user={currentUser}
+              onLogout={handleLogout}
+            />
+          )}
+          
+          {currentPage === 'admin' && (
+            <AdminDashboard 
+              user={currentUser}
+              onLogout={handleLogout}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // ===========================================
+    // LOGIN PAGE COMPONENT
+    // ===========================================
+    function LoginPage({ onLogin, onSwitchToSignup }) {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+
+      function handleLogin(e) {
+        e.preventDefault(); // Prevents page refresh
+        setError('');
+
+        try {
+          // Get user from storage
+          const result = storage.get(`user:${email}`);
+          
+          if (!result) {
+            setError('User not found. Please sign up first!');
+            return;
+          }
+
+          const user = JSON.parse(result.value);
+          
+          // Check password
+          if (user.password !== password) {
+            setError('Incorrect password!');
+            return;
+          }
+
+          // Save current user
+          storage.set('current_user', JSON.stringify(user));
+          onLogin(user);
+        } catch (error) {
+          setError('Login failed. Please try again.');
+        }
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4 fade-in">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <div className="text-center mb-8">
+              <h1 className="heading-font text-4xl font-bold text-gray-900 mb-2">MediCare</h1>
+              <p className="text-gray-600">Hospital Management System</p>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="doctor@hospital.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium btn-hover hover:bg-blue-700"
+              >
+                Sign In
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Don't have an account?{' '}
+                <button
+                  onClick={onSwitchToSignup}
+                  className="text-blue-600 font-medium hover:underline"
+                >
+                  Sign up
+                </button>
+              </p>
+            </div>
+
+            <div className="mt-8 p-4 bg-blue-50 rounded-lg text-sm text-gray-700">
+              <p className="font-medium mb-2">💡 Getting Started:</p>
+              <p>Create a new account by clicking "Sign up" above, or use demo credentials once created!</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===========================================
+    // SIGNUP PAGE COMPONENT
+    // ===========================================
+    function SignupPage({ onSignup, onSwitchToLogin }) {
+      const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'doctor',
+        specialization: ''
+      });
+      const [error, setError] = useState('');
+      const [success, setSuccess] = useState('');
+
+      function handleSignup(e) {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        try {
+          // Check if user already exists
+          const existing = storage.get(`user:${formData.email}`);
+          if (existing) {
+            setError('Email already registered!');
+            return;
+          }
+
+          const newUser = {
+            ...formData,
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString()
+          };
+
+          // Save user to storage
+          storage.set(`user:${formData.email}`, JSON.stringify(newUser));
+          storage.set('current_user', JSON.stringify(newUser));
+
+          setSuccess('Account created successfully! ✅');
+          
+          // Wait a moment to show success, then redirect
+          setTimeout(() => {
+            onSignup(newUser);
+          }, 1000);
+        } catch (error) {
+          setError('Signup failed. Please try again.');
+          console.error(error);
+        }
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4 fade-in">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+            <div className="text-center mb-8">
+              <h1 className="heading-font text-4xl font-bold text-gray-900 mb-2">Join MediCare</h1>
+              <p className="text-gray-600">Create your account</p>
+            </div>
+
+            <form onSubmit={handleSignup} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Dr. John Doe"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="doctor@hospital.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="••••••••"
+                  required
+                  minLength="6"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+                <input
+                  type="text"
+                  value={formData.specialization}
+                  onChange={(e) => setFormData({...formData, specialization: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Cardiology, Neurology, etc."
+                  required
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="bg-green-50 text-green-600 px-4 py-3 rounded-lg text-sm">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium btn-hover hover:bg-blue-700"
+              >
+                Create Account
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                Already have an account?{' '}
+                <button
+                  onClick={onSwitchToLogin}
+                  className="text-blue-600 font-medium hover:underline"
+                >
+                  Sign in
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===========================================
+    // DOCTOR DASHBOARD COMPONENT
+    // This is where doctors upload & view reports
+    // ===========================================
+    function DoctorDashboard({ user, onLogout }) {
+      const [reports, setReports] = useState([]);
+      const [uploadedFile, setUploadedFile] = useState(null);
+      const [patientName, setPatientName] = useState('');
+      const [analyzing, setAnalyzing] = useState(false);
+      const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'reports'
+
+      // Load user's reports when component mounts
+      useEffect(() => {
+        loadReports();
+      }, []);
+
+      function loadReports() {
+        try {
+          const result = storage.get(`reports:${user.email}`);
+          if (result) {
+            setReports(JSON.parse(result.value));
+          }
+        } catch (error) {
+          console.log('No reports found');
+        }
+      }
+
+      // HANDLE FILE UPLOAD - Reads the file content
+      function handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setUploadedFile({
+              name: file.name,
+              content: event.target.result,
+              type: file.type
+            });
+          };
+          reader.readAsText(file);
+        }
+      }
+
+      // ANALYZE REPORT using Claude AI
+      async function analyzeReport() {
+        if (!uploadedFile || !patientName) {
+          alert('Please provide patient name and upload a report!');
+          return;
+        }
+
+        setAnalyzing(true);
+
+        try {
+          // Call Claude API to analyze the medical report
+          const response = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1000,
+              messages: [
+                {
+                  role: "user",
+                  content: `You are a medical assistant. Analyze this medical report and provide:
+1. Key Findings
+2. Diagnosis/Conclusions
+3. Recommendations
+
+Report content:
+${uploadedFile.content}
+
+Provide a clear, structured summary.`
+                }
+              ],
+            })
+          });
+
+          const data = await response.json();
+          const analysis = data.content[0].text;
+
+          // Create new report object
+          const newReport = {
+            id: Date.now().toString(),
+            patientName,
+            fileName: uploadedFile.name,
+            fileContent: uploadedFile.content,
+            analysis,
+            date: new Date().toISOString(),
+            doctor: user.name
+          };
+
+          // Save to reports
+          const updatedReports = [newReport, ...reports];
+          setReports(updatedReports);
+          storage.set(`reports:${user.email}`, JSON.stringify(updatedReports));
+
+          // Reset form
+          setUploadedFile(null);
+          setPatientName('');
+          document.querySelector('input[type="file"]').value = '';
+          setActiveTab('reports');
+          
+          alert('Report analyzed successfully! ✅');
+        } catch (error) {
+          alert('Failed to analyze report. Please try again.');
+          console.error(error);
+        }
+
+        setAnalyzing(false);
+      }
+
+      return (
+        <div className="min-h-screen bg-gray-50 fade-in">
+          {/* HEADER */}
+          <header className="bg-white border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="heading-font text-3xl font-bold text-gray-900">MediCare</h1>
+                  <p className="text-gray-600 text-sm mt-1">Welcome, Dr. {user.name}</p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* TABS */}
+            <div className="flex space-x-4 mb-8">
+              <button
+                onClick={() => setActiveTab('upload')}
+                className={`px-6 py-3 rounded-lg font-medium ${
+                  activeTab === 'upload'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Upload Report
+              </button>
+              <button
+                onClick={() => setActiveTab('reports')}
+                className={`px-6 py-3 rounded-lg font-medium ${
+                  activeTab === 'reports'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                View Reports ({reports.length})
+              </button>
+            </div>
+
+            {/* UPLOAD TAB */}
+            {activeTab === 'upload' && (
+              <div className="bg-white rounded-xl shadow-sm p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Upload Patient Report</h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Patient Name
+                    </label>
+                    <input
+                      type="text"
+                      value={patientName}
+                      onChange={(e) => setPatientName(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter patient name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Medical Report (Text file)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".txt"
+                      onChange={handleFileUpload}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                    {uploadedFile && (
+                      <p className="mt-2 text-sm text-green-600">✓ {uploadedFile.name} uploaded</p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={analyzeReport}
+                    disabled={analyzing || !uploadedFile || !patientName}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium btn-hover hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    {analyzing ? 'Analyzing with AI...' : 'Analyze Report'}
+                  </button>
+
+                  <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+                    <p className="font-medium text-yellow-900 mb-1">📝 Note:</p>
+                    <p className="text-yellow-800">Create a simple .txt file with medical report content to test the AI analysis feature!</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* REPORTS TAB */}
+            {activeTab === 'reports' && (
+              <div className="space-y-4">
+                {reports.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                    <p className="text-gray-500 text-lg">No reports yet. Upload your first report!</p>
+                  </div>
+                ) : (
+                  reports.map(report => (
+                    <div key={report.id} className="bg-white rounded-xl shadow-sm p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{report.patientName}</h3>
+                          <p className="text-sm text-gray-500">
+                            {new Date(report.date).toLocaleDateString()} • {report.fileName}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-900 mb-2">AI Analysis:</h4>
+                        <div className="text-gray-700 whitespace-pre-wrap">{report.analysis}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ===========================================
+    // ADMIN DASHBOARD COMPONENT
+    // Where admins manage all users
+    // ===========================================
+    function AdminDashboard({ user, onLogout }) {
+      const [users, setUsers] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        loadAllUsers();
+      }, []);
+
+      function loadAllUsers() {
+        try {
+          // Get all keys from storage
+          const result = storage.list('user:');
+          if (result && result.keys) {
+            const allUsers = result.keys
+              .map(key => {
+                const data = storage.get(key);
+                return data ? JSON.parse(data.value) : null;
+              })
+              .filter(u => u && u.email !== user.email); // Don't show admin themselves
+            
+            setUsers(allUsers);
+          }
+        } catch (error) {
+          console.error('Error loading users:', error);
+        }
+        setLoading(false);
+      }
+
+      function deleteUser(email) {
+        if (!confirm(`Delete user ${email}?`)) return;
+        
+        try {
+          storage.delete(`user:${email}`);
+          storage.delete(`reports:${email}`);
+          setUsers(users.filter(u => u.email !== email));
+          alert('User deleted successfully!');
+        } catch (error) {
+          alert('Failed to delete user');
+        }
+      }
+
+      return (
+        <div className="min-h-screen bg-gray-50 fade-in">
+          {/* HEADER */}
+          <header className="bg-white border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="heading-font text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                  <p className="text-gray-600 text-sm mt-1">Manage all users</p>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Registered Users ({users.length})
+                </h2>
+              </div>
+
+              {loading ? (
+                <div className="p-12 text-center text-gray-500">Loading users...</div>
+              ) : users.length === 0 ? (
+                <div className="p-12 text-center text-gray-500">No users registered yet</div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {users.map(u => (
+                    <div key={u.email} className="px-6 py-4 hover:bg-gray-50">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{u.name}</h3>
+                          <p className="text-sm text-gray-600">{u.email}</p>
+                          <p className="text-sm text-gray-500">{u.specialization}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Joined: {new Date(u.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => deleteUser(u.email)}
+                          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-gray-700">
+                💡 <strong>Tip:</strong> Sign up as multiple doctors to see them appear here!
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===========================================
+    // RENDER THE APP
+    // ===========================================
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
