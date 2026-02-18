@@ -340,6 +340,7 @@ function App() {
       const [patientName, setPatientName] = useState('');
       const [analyzing, setAnalyzing] = useState(false);
       const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'reports'
+      const [darkMode, setDarkMode] = useState(false); // Dark mode state
 
       // Load user's reports when component mounts
       useEffect(() => {
@@ -357,7 +358,29 @@ function App() {
         }
       }
 
-      // HANDLE FILE UPLOAD - Reads the file content
+      // Load dark mode preference from localStorage
+      useEffect(() => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+          setDarkMode(true);
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      }, []);
+
+      // TOGGLE DARK MODE - Switches between light and dark theme
+      function toggleDarkMode() {
+        const newMode = !darkMode;
+        setDarkMode(newMode);
+        
+        if (newMode) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+        }
+      }
+
       function handleFileUpload(e) {
         const file = e.target.files[0];
         if (file) {
@@ -453,12 +476,21 @@ Provide a clear, structured summary.`
                   <h1 className="heading-font text-3xl font-bold text-gray-900">MediCare</h1>
                   <p className="text-gray-600 text-sm mt-1">Welcome, Dr. {user.name}</p>
                 </div>
-                <button
-                  onClick={onLogout}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-                >
-                  Logout
-                </button>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={toggleDarkMode}
+                    className="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                    title="Toggle Dark Mode"
+                  >
+                    {darkMode ? '☀️' : '🌙'}
+                  </button>
+                  <button
+                    onClick={onLogout}
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
             </div>
           </header>
