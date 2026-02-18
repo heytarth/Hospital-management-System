@@ -70,7 +70,7 @@
     }
     
     ::-webkit-scrollbar-track {
-      background: #f1f1f1;
+       background: var(--bg-tertiary);
     }
     
     ::-webkit-scrollbar-thumb {
@@ -93,3 +93,54 @@
       transform: translateY(-2px);
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
+    /* ===========================
+   DARK MODE OVERRIDES
+   ========================== */
+
+[data-theme="dark"] body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .bg-white {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .bg-gray-50 {
+  background: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-gray-700 {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .text-gray-600 {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .text-gray-500 {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .bg-blue-50 {
+  background: var(--success-bg) !important;
+}
+
+[data-theme="dark"] .bg-red-50 {
+  background: var(--error-bg) !important;
+}
+
+[data-theme="dark"] .shadow-xl,
+[data-theme="dark"] .shadow-sm {
+  box-shadow: 0 4px 6px var(--shadow-color) !important;
+}
