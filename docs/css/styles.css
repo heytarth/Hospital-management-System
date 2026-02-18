@@ -1,7 +1,56 @@
 /* Hospital Management System Styles */
    /* Created: [15-02-2026] */
- <style>
+
     /* CUSTOM STYLING - This makes our app look professional */
+    /* ===========================
+   THEME VARIABLES
+   ========================== */
+
+/* Default Light Theme */
+:root {
+  --bg-primary: #f9fafb;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f3f4f6;
+  
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  
+  --border-color: #e5e7eb;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  
+  --accent-blue: #2563eb;
+  --accent-blue-hover: #1d4ed8;
+  
+  --success-bg: #ecfdf5;
+  --success-text: #059669;
+  
+  --error-bg: #fef2f2;
+  --error-text: #dc2626;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  
+  --border-color: #475569;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #60a5fa;
+  
+  --success-bg: #064e3b;
+  --success-text: #34d399;
+  
+  --error-bg: #7f1d1d;
+  --error-text: #fca5a5;
+}
     * {
       font-family: 'DM Sans', sans-serif;
     }
@@ -44,4 +93,3 @@
       transform: translateY(-2px);
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
-  </style>
